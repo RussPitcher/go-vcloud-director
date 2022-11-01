@@ -203,10 +203,19 @@ func (vdc *Vdc) GetNetworkList() ([]*types.QueryResultOrgVdcNetworkRecordType, e
 		"type":          "orgVdcNetwork",
 		"filter":        fmt.Sprintf("vdc==%s", url.QueryEscape(vdc.Vdc.ID)),
 		"filterEncoded": "true",
+		"pageSize":      "128",
 	})
 	if err != nil {
 		return nil, fmt.Errorf("[findEdgeGatewayConnection] error returning the list of networks for VDC: %s", err)
 	}
+
+	// Note: pageSize of 128 (the maximum page size allowed) should be enough to get all networks.
+	// In case this is not true, we trap the error, so that we become aware that this assumption is incorrect.
+	// TODO: convert this query into a cumulativeQuery
+	if result.Results.Total > 128.0 {
+		return nil, fmt.Errorf("[QueryWithNotEncodedParams] FATAL - more than 128 networks found. Refactory needed")
+	}
+	
 	return result.Results.OrgVdcNetworkRecord, nil
 }
 
